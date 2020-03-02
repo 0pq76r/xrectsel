@@ -37,6 +37,12 @@ struct Region {
   unsigned int h; /* height */
   unsigned int b; /* border_width */
   unsigned int d; /* depth */
+  float rx; /* relative offset from left of screen */
+  float ry; /* relative offset from top of screen */
+  float rX; /* relative offset from right of screen */
+  float rY; /* relative offset from bottom of screen */
+  float rw; /* width */
+  float rh; /* height */
 };
 
 static void error(const char *errstr, ...);
@@ -115,6 +121,37 @@ static int print_region_attr(const char *fmt, Region region)
         case 'd':
           printf("%u", region.d);
           break;
+        case 'r':
+            printf("%f", region.rx);
+            break;
+        case 's':
+            printf("%f", region.ry);
+            break;
+        case 't':
+            printf("%f", region.rw);
+            break;
+        case 'u':
+            printf("%f", region.rh);
+            break;
+        case 'm': // Coordinate transform matrix
+            printf("%f 0 %f 0 %f %f 0 0 1",
+                   region.rw, region.rx,
+                   region.rh, region.ry
+                );
+            break;
+        case 'M': // Coordinate transform matrix (flip if H>W)
+            if(region.w>region.h){
+                printf("%f 0 %f 0 %f %f 0 0 1",
+                       region.rw, region.rx,
+                       region.rh, region.ry
+                    );
+            } else {
+                printf("0 %f %f %f 0 %f 0 0 1",
+                       region.rw, region.rx,
+                       -region.rh, 1-region.rY
+                    );
+            }
+            break;
       }
     } else {
       putchar(*s);
@@ -226,6 +263,13 @@ static int select_region(Display *dpy, Window root, Region *region)
   /* those doesn't really make sense but should be set */
   sr.b = rr.b;
   sr.d = rr.d;
+  /* relative x y w h */
+  sr.rx=(float)x/rr.w;
+  sr.ry=(float)y/rr.h;
+  sr.rw=(float)width/rr.w;
+  sr.rh=(float)height/rr.h;
+  sr.rX=(float)sr.X/rr.w;
+  sr.rY=(float)sr.Y/rr.h;
   *region = sr;
   return EXIT_SUCCESS;
 }
